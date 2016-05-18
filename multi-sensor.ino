@@ -36,7 +36,7 @@ static const char hex[] = "0123456789ABCDEF";
 char gpsMessage[92];
 char buffer[12];
 
-
+#define PMTK_SET_NMEA_UPDATE_0_2HZ  "$PMTK220,5000*1B"
 #define PMTK_SET_NMEA_UPDATE_1HZ  "$PMTK220,1000*1F"
 #define PMTK_SET_NMEA_UPDATE_5HZ  "$PMTK220,200*2C"
 #define PMTK_SET_NMEA_UPDATE_10HZ "$PMTK220,100*2F"
@@ -91,13 +91,16 @@ void setup(void)
   
   Serial.begin(115200);  // phony baud rate for USB
   mySerial.begin(9600);  // GPS baud rate
-  delay(1000);
+  delay(250);
   Serial.println(F("Multi-sensor logger v1.0")); Serial.println("");
   
   /* Initialise the sensors */
   initSensors();
+  delay(250);
   mySerial.println(PMTK_SET_NMEA_OUTPUT_RMCGGA);  // set RMC and GGA output
-  mySerial.println(PMTK_SET_NMEA_UPDATE_1HZ);     // set GPS data rate
+  delay(250);
+  mySerial.println(PMTK_SET_NMEA_UPDATE_0_2HZ);     // set GPS data rate
+  delay(250);
   while (mySerial.available()) {                  // flush GPS serial port input buffer
     mySerial.read();
   }
@@ -136,7 +139,7 @@ void loop(void)
         c = mySerial.read();
         Serial.print(c);
       }
-    } while ((c != '\n') || ((millis() - gpsTimeout) < 800));
+    } while ((c != '\n') || ((millis() - gpsTimeout) < 200));
   }
   
   accel.getEvent(&accel_event);
