@@ -7,10 +7,18 @@ mutli-sensor-calib:  reads and averages 10DOF output for calibrating the magneto
 
 requirements:  adafruit 10DOF and GPS libraries
 
-Python code
-NAME_GOES_HERE: read from COM1 (Vaisala WXT536 all-in-one weather sensor) and COM5 (arduino logger), writing incoming lines to a single file
+https://github.com/adafruit/Adafruit-GPS-Library
+https://github.com/adafruit/Adafruit_Sensor
+https://github.com/adafruit/Adafruit_10DOF
+https://github.com/adafruit/Adafruit_LSM303DLHC
+https://github.com/adafruit/Adafruit_L3GD20_U
+https://github.com/adafruit/Adafruit_BMP085_Unified
 
-requirements: pyserial, pynmea2 libraries
+
+Python code
+serialReader.py: read from COM1 (Vaisala WXT536 all-in-one weather sensor) and COM5 (arduino logger), writing incoming lines to a single file
+
+requirements: pyserial, pynmea2 libraries.  I like using PIP to install pynmea2
 
 revision history:
 Started around 5/18/2016 for CLAMPS2 trailer
