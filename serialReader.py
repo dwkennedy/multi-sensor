@@ -3,6 +3,7 @@ import pynmea2
 import time
 
 filename = time.strftime("surface_data_%Y%m%d.sfc")
+print ("Opening new file: ",filename)
 file = open(filename,'a')
 
 wxt = serial.Serial('COM1', 19200, timeout=1.0)  # open wxt536 serial port
@@ -11,8 +12,12 @@ gps = serial.Serial('COM18', 19200, timeout=1.0)  # open arduino combo device
 
 while True:
 
-    filename = time.strftime("surface_data_%Y%m%d.sfc")
-    file = open(filename, 'a')
+    newFilename = time.strftime("surface_data_%Y%m%d.sfc")
+    if newFilename != filename:
+        file.close()
+        filename = newFilename
+        file = open(filename, 'a')
+        print ("Opening new file: ",filename)
 
     while (wxt.in_waiting):
         x = wxt.readline()
@@ -23,8 +28,6 @@ while True:
         x = gps.readline()
         print (x.decode("utf-8"),end="")
         file.write(x.decode("utf-8"))
-
-    file.close()
 
 # sadly we never get here :(
 file.close()
