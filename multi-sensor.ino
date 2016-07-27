@@ -21,7 +21,6 @@
 #define SENSOR_ACCEL_OFFSET_X -0.40
 #define SENSOR_ACCEL_OFFSET_Y -0.18
 #define SENSOR_ACCEL_OFFSET_Z 0.41
-#define GPS_READ_TIMEOUT 400
 
 /* Assign a unique ID to the sensors */
 Adafruit_10DOF                dof   = Adafruit_10DOF();
@@ -140,7 +139,7 @@ void loop(void)
         c = mySerial.read();
         Serial.print(c);
       }
-    } while ((c != '\n') || ((millis() - gpsTimeout) < GPS_READ_TIMEOUT));
+    } while ((c != '\n') || ((millis() - gpsTimeout) < 2000));
   }
   
   accel.getEvent(&accel_event);
