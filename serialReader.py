@@ -1,13 +1,18 @@
 import serial
 import pynmea2
+import time
 
-file = open("surface_data.txt",'a')
+filename = time.strftime("surface_data_%Y%m%d.sfc")
+file = open(filename,'a')
 
-wxt = serial.Serial('COM1', 19200, timeout=0.25)  # open wxt536 serial port
-gps = serial.Serial('COM5', 19200, timeout=0.25)  # open arduino combo device
+wxt = serial.Serial('COM1', 19200, timeout=1.0)  # open wxt536 serial port
+gps = serial.Serial('COM18', 19200, timeout=1.0)  # open arduino combo device
 #print(wxt.name)         # check which port was really used
 
 while True:
+
+    filename = time.strftime("surface_data_%Y%m%d.sfc")
+    file = open(filename, 'a')
 
     while (wxt.in_waiting):
         x = wxt.readline()
@@ -20,7 +25,6 @@ while True:
         file.write(x.decode("utf-8"))
 
     file.close()
-    file = open("surface_data.txt",'a')
 
 # sadly we never get here :(
 file.close()

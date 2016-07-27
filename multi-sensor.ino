@@ -139,7 +139,7 @@ void loop(void)
         c = mySerial.read();
         Serial.print(c);
       }
-    } while ((c != '\n') || ((millis() - gpsTimeout) < 200));
+    } while ((c != '\n') || ((millis() - gpsTimeout) < 2000));
   }
   
   accel.getEvent(&accel_event);
