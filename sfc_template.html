@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CLAMPS2 Surface Data</title>
+
+</head>
+<body>
+
+<H1>CLAMPS2 Surface Data</H1>
+
+<table border="1">
+    <tr><th>Paramemter</th><th>Value</th></tr>
+    <tr><td align="right">Pressure:</td><td id="press"></td></tr>
+    <tr><td align="right">RH:</td><td id="RH"></td></tr>
+    <tr><td align="right">Temperature:</td><td id="temp"></td></tr>
+    <tr><td align="right">Wind Direction:</td><td id="wind_dir"></td></tr>
+    <tr><td align="right">Wind Speed:</td><td id="wind_spd"></td></tr>
+</table>
+
+<script>
+function loadDoc() {
+   var xhttp = new XMLHttpRequest();
+   xhttp.onreadystatechange = function() {
+      if (this.readyState == 4 && this.status == 200) {
+         x = JSON.parse(this.responseText)
+         document.getElementById("press").innerHTML = x.press+" hPa";
+         document.getElementById("RH").innerHTML = x.RH + "%";
+         document.getElementById("temp").innerHTML = x.temp + " deg C";
+         document.getElementById("wind_dir").innerHTML = x.wind_dir + " deg";
+         document.getElementById("wind_spd").innerHTML = x.wind_spd + " m/s";
+      }
+   };
+
+   xhttp.open("GET", "/data", true);
+   xhttp.send();
+
+   setTimeout(loadDoc, 7000);
+}
+
+setTimeout(loadDoc, 100);
+
+</script>
+
+</body>
+</html>
