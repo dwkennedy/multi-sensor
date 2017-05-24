@@ -12,10 +12,13 @@
 <table border="1">
     <tr><th>Paramemter</th><th>Value</th></tr>
     <tr><td align="right">Pressure:</td><td id="press"></td></tr>
-    <tr><td align="right">RH:</td><td id="RH"></td></tr>
     <tr><td align="right">Temperature:</td><td id="temp"></td></tr>
+    <tr><td align="right">RH:</td><td id="RH"></td></tr>
     <tr><td align="right">Wind Direction:</td><td id="wind_dir"></td></tr>
     <tr><td align="right">Wind Speed:</td><td id="wind_spd"></td></tr>
+    <tr><td align="right">Heading:</td><td id="heading"></td></tr>
+    <tr><td align="right">Roll:</td><td id="roll"></td></tr>
+    <tr><td align="right">Pitch:</td><td id="pitch"></td></tr>
 </table>
 
 <script>
@@ -29,6 +32,9 @@ function loadDoc() {
          document.getElementById("temp").innerHTML = x.temp + " deg C";
          document.getElementById("wind_dir").innerHTML = x.wind_dir + " deg";
          document.getElementById("wind_spd").innerHTML = x.wind_spd + " m/s";
+         document.getElementById("heading").innerHTML = x.heading + " deg";
+         document.getElementById("roll").innerHTML = x.roll + " deg";
+         document.getElementById("pitch").innerHTML = x.pitch + " deg";
       }
    };
 
