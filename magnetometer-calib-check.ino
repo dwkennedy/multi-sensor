@@ -15,12 +15,18 @@
 //#define SENSOR_MAG_OFFSET_Y 2.93956
 //#define SENSOR_MAG_OFFSET_X 32.6935
 //#define SENSOR_MAG_OFFSET_Y 5.43078
+//#define SENSOR_MAG_OFFSET_Z 36
+
+#define SAMPLES 1000
+//#define SENSOR_MAG_OFFSET_X 19.51
+//#define SENSOR_MAG_OFFSET_Y 11.15
+#define SENSOR_MAG_OFFSET_Z 0
 #define SENSOR_MAG_OFFSET_X 11.955
 #define SENSOR_MAG_OFFSET_Y 12.135
-#define SENSOR_MAG_OFFSET_Z 0
-#define SENSOR_ACCEL_OFFSET_X -0.40
-#define SENSOR_ACCEL_OFFSET_Y -0.18
+#define SENSOR_ACCEL_OFFSET_X 0.0
+#define SENSOR_ACCEL_OFFSET_Y 0.045
 #define SENSOR_ACCEL_OFFSET_Z 0.41
+#define LOCAL_DECLINATION 3.75
 
 /* Assign a unique ID to the sensors */
 Adafruit_10DOF                dof   = Adafruit_10DOF();
@@ -36,7 +42,7 @@ static const char hex[] = "0123456789ABCDEF";
 char gpsMessage[92];
 char buffer[12];
 
-#define PMTK_SET_NMEA_UPDATE_0_2HZ  "$PMTK220,5000*1B"
+
 #define PMTK_SET_NMEA_UPDATE_1HZ  "$PMTK220,1000*1F"
 #define PMTK_SET_NMEA_UPDATE_5HZ  "$PMTK220,200*2C"
 #define PMTK_SET_NMEA_UPDATE_10HZ "$PMTK220,100*2F"
@@ -91,20 +97,31 @@ void setup(void)
   
   Serial.begin(115200);  // phony baud rate for USB
   mySerial.begin(9600);  // GPS baud rate
-  delay(250);
-  Serial.println(F("Multi-sensor logger v1.1")); Serial.println("");
+  delay(1000);
+  Serial.println(F("Multi-sensor logger calibration check v1.1")); 
+  Serial.println("");
+  Serial.println(F("trueHeading,magHeading,magX,magY,magZ,accelX,accelY,accelZ"));
+  //Serial.println(F("-----------------------------------"));
   
   /* Initialise the sensors */
   initSensors();
-  delay(250);
   mySerial.println(PMTK_SET_NMEA_OUTPUT_RMCGGA);  // set RMC and GGA output
-  delay(250);
-  mySerial.println(PMTK_SET_NMEA_UPDATE_0_2HZ);     // set GPS data rate
-  delay(250);
+  mySerial.println(PMTK_SET_NMEA_UPDATE_1HZ);     // set GPS data rate
   while (mySerial.available()) {                  // flush GPS serial port input buffer
     mySerial.read();
   }
 }
+
+long counter = 0;
+float mag_x = 0;
+float mag_y = 0;
+float mag_z = 0;
+float accel_x = 0;
+float accel_y = 0;
+float accel_z = 0;
+float magHeading = 0;
+float trueHeading = 0;
+float magHeadingSingle = 0;
 
 /**************************************************************************/
 /*!
@@ -119,72 +136,66 @@ void loop(void)
   sensors_vec_t   orientation;
 
   float temperature;
-  float heading;
-  char c;
 
-  // trigger on incoming GPS sentence
-  while(!mySerial.available()) {
-    delay(1);
-  }
-
-  // read/print GPS stings until pause after end of line character
-  //  i.e. \n newline received, and no characters immediately available.
-  //  there is much jitter in GPS output timing.  it's roughly 1 sec
-  //   so keep copying characters until a newline is seen, and continue
-  //   to wait for sentences for at least  800 msec or so.
+  for (counter=0; counter <SAMPLES; counter++) {
+     while (!mag.getEvent(&mag_event)) {
+        //Serial.println("Failure in magnetometer");
+     }
+     while (!accel.getEvent(&accel_event)) {
+       //Serial.println("Failure in accelerometer");
+     }
   
-  long gpsTimeout = millis();
-  if(mySerial.available()) {
-    do {
-      while(mySerial.available()) {
-        c = mySerial.read();
-        Serial.print(c);
-      }
-    } while ((c != '\n') || ((millis() - gpsTimeout) < 2000));
+     //bmp.getEvent(&bmp_event);
+     //bmp.getTemperature(&temperature);
+
+     // apply 2D correction for hard iron offsets
+     mag_event.magnetic.x -= SENSOR_MAG_OFFSET_X;
+     mag_event.magnetic.y -= SENSOR_MAG_OFFSET_Y;
+     mag_event.magnetic.z -= SENSOR_MAG_OFFSET_Z;
+     mag_event.magnetic.z /= 2;  // output of z axis is double
+
+     // apply accelerometer offsets
+     accel_event.acceleration.x -= SENSOR_ACCEL_OFFSET_X; 
+     accel_event.acceleration.y -= SENSOR_ACCEL_OFFSET_Y; 
+     accel_event.acceleration.z -= SENSOR_ACCEL_OFFSET_Z; 
+
+     mag_x += mag_event.magnetic.x;
+     mag_y += mag_event.magnetic.y;
+     mag_z += mag_event.magnetic.z;
+     
+     accel_x += accel_event.acceleration.x;
+     accel_y += accel_event.acceleration.y;
+     accel_z += accel_event.acceleration.z;
   }
+
+  mag_x = mag_x/SAMPLES;
+  mag_y = mag_y/SAMPLES;
+  mag_z = mag_z/SAMPLES;
   
-  while(!accel.getEvent(&accel_event)) {
-    
-  }
-  while(!mag.getEvent(&mag_event)) {
-    
-  }
-  while(!bmp.getEvent(&bmp_event)) {
-    
-  }
-  bmp.getTemperature(&temperature);
-
-  // apply 2D correction for hard iron offsets
-  mag_event.magnetic.x -= SENSOR_MAG_OFFSET_X;
-  mag_event.magnetic.y -= SENSOR_MAG_OFFSET_Y;
-  mag_event.magnetic.z -= SENSOR_MAG_OFFSET_Z;
-  mag_event.magnetic.z /= 2;  // output of z axis is double
-
-  heading = 180 + 57.2957795131 * atan2(mag_event.magnetic.y, mag_event.magnetic.x);
-  // apply accelerometer offsets
-  accel_event.acceleration.x -= SENSOR_ACCEL_OFFSET_X; 
-  accel_event.acceleration.y -= SENSOR_ACCEL_OFFSET_Y; 
-  accel_event.acceleration.z -= SENSOR_ACCEL_OFFSET_Z; 
-
-
+  magHeading = (180 + (57.2957795131 * atan2(mag_y, mag_x)));
+  trueHeading += (magHeading - LOCAL_DECLINATION);
+     
   // Use this code for calibration
-/*  Serial.print(F("Mag X: "));  // 9:55    46    32
-  Serial.print(mag_event.magnetic.x);
-  Serial.print(F(" Y: "));  // -17  : 28    45   22.5-17  5.5
-  Serial.print(mag_event.magnetic.y);
-  Serial.print(F(" Z: "));
-  Serial.print(mag_event.magnetic.z);  // -15 : 87    102  87-51=36
-  Serial.println("");
-  Serial.print(F("Accel X: "));
-  Serial.print(accel_event.acceleration.x);
-  Serial.print(F(" Y: "));
-  Serial.print(accel_event.acceleration.y);
-  Serial.print(F(" Z: "));
-  Serial.print(accel_event.acceleration.z);
-  Serial.println("");
-  */
+  //if (counter++ >= SAMPLES) {
+    Serial.print(trueHeading);
+    Serial.print(F(","));
+    Serial.print(magHeading);
+    Serial.print(F(","));
+    Serial.print(mag_x);
+    Serial.print(F(","));
+    Serial.print(mag_y);
+    Serial.print(F(","));
+    Serial.print(mag_z);
+    Serial.print(F(","));
+    Serial.print(accel_x/SAMPLES);
+    Serial.print(F(","));
+    Serial.print(accel_y/SAMPLES);
+    Serial.print(F(","));
+    Serial.print(accel_z/SAMPLES);
+    Serial.println("");
 
 
+/*
   // compute pitch/roll from accelerometer readings
   dof.accelGetOrientation(&accel_event, &orientation);
 
@@ -198,8 +209,7 @@ void loop(void)
   dtostrf(orientation.pitch, 0, 2, buffer);
   strcat (gpsMessage, buffer);
   strcat (gpsMessage, ",");
-  //dtostrf(orientation.heading, 0, 2, buffer);
-  dtostrf(heading, 0, 2, buffer);
+  dtostrf(orientation.heading, 0, 2, buffer);
   strcat (gpsMessage, buffer);
   strcat (gpsMessage, ",");
   dtostrf(bmp_event.pressure, 0, 2, buffer);
@@ -211,7 +221,7 @@ void loop(void)
 
   gpsChecksum(gpsMessage);
 
-  //strcat (gpsMessage, "\r\n");
+  strcat (gpsMessage, "\r\n");
 
 /*  Serial.print(F("$PCLMP2,"));
   Serial.print(orientation.roll);
@@ -225,11 +235,12 @@ void loop(void)
   Serial.print(temperature);
   Serial.print(F("*XX"));
 */
-
-  Serial.print(gpsMessage);    
-  Serial.println(F(""));
- 
-  
+    counter = 0;
+    mag_x = 0; mag_y = 0; mag_z = 0;
+    accel_x = 0; accel_y = 0; accel_z = 0;
+    magHeading = 0; trueHeading = 0;
+    delay(5);
+  //}
 }
 
 
