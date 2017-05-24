@@ -7,6 +7,17 @@ mutli-sensor-calib:  reads and averages 10DOF output for calibrating the magneto
 magnetometer-calib:  reads the XYZ components of the magnetometer and the accelerometer, dumps in CSV.  Use R or something to find the min/max values and calculate the offset to normalize the data.  Don't need to scale the axes unless they are very different.
 magnetometer-calib-check: read 1000 samples and average, compute the compass direction, and display.  To verify the calibration.
 
+multi-sensor generates a proprietary NMEA-type sentence, in addition to GPRMC, GPGGA, and the WI (weather instrument) sentences from the WXT-536 instrument.
+
+$PCLMP2,roll,pitch,heading,pressure,temp
+P=proprietary
+CLM=manufacturer
+P2=platform ID
+roll=attitude of vehicle, left to right
+pitch=attitude of vehicle, front to back
+heading=magnetic heading of tail of trailer
+pressure, temp: from the BMP180 sensor
+
 requirements:  adafruit 10DOF and GPS libraries
 
 https://github.com/adafruit/Adafruit-GPS-Library
