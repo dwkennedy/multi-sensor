@@ -16,16 +16,21 @@ https://github.com/adafruit/Adafruit_BMP085_Unified
 
 
 Python code
-serialReader.py: read from COM1 (Vaisala WXT536 all-in-one weather sensor) and COM5 (arduino logger), writing incoming lines to a single file
+serialReader.py: read from COM1 (Vaisala WXT536 all-in-one weather sensor) and COM18 (arduino logger), writing incoming lines to a single file
 
 requirements: pyserial, pynmea2 libraries.  I like using PIP to install pynmea2
 
 revision history:
-Started around 5/18/2016 for CLAMPS2 trailer
+Started around 5/18/2016 for CLAMPS2 trailer (v1.0)
+Improvements made around 5/20/2017 for EPIC and RiVorS projects (v1.1)
+
+V1.1 improvements:
+Parse NMEA strings into human readable format
+Expose web interface for present weather conditions and trailer orientation
+Calibrated magnetometer, added code for compass heading
 
 TODO:
-write strings into file (for init testing, writes to console)
-close current file, open new file every hour
-parse NMEA strings & weather strings
-make present weather display (text, or ultimately graphical)
+Parse GPS messages and display date/time/location/elevation.
+Include link to Google Maps/Google Earth
+make nicer present weather display (text, or ultimately graphical; show recent history and trend
 
