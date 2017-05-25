@@ -26,6 +26,7 @@
 #define SENSOR_ACCEL_OFFSET_X 0.0
 #define SENSOR_ACCEL_OFFSET_Y 0.045
 #define SENSOR_ACCEL_OFFSET_Z 0.41
+// East declination is positive
 #define LOCAL_DECLINATION 3.75
 
 /* Assign a unique ID to the sensors */
@@ -173,7 +174,7 @@ void loop(void)
   mag_z = mag_z/SAMPLES;
   
   magHeading = (180 + (57.2957795131 * atan2(mag_y, mag_x)));
-  trueHeading += (magHeading - LOCAL_DECLINATION);
+  trueHeading += (magHeading + LOCAL_DECLINATION);
      
   // Use this code for calibration
   //if (counter++ >= SAMPLES) {
