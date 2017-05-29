@@ -3,48 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <title>CLAMPS2 Surface Data</title>
-
+    <style>
+       #map {
+        height: 350px;
+        width: 100%;
+       }
+    </style>
 </head>
 <body>
 
-<H1>CLAMPS2 Surface Data</H1>
+<table style="font-size:200%" border="1">
+    <tr><td align="right">Pressure:</td><td id="press"></td><td align="right">Heading:</td><td id="heading"></td></tr>
+    <tr><td align="right">Temperature:</td><td id="temp"></td><td align="right">Roll:</td><td id="roll"></td></tr>
+    <tr><td align="right">RH:</td><td id="RH"></td><td align="right">Pitch:</td><td id="pitch"></td></tr>
+    <tr><td align="right">Wind Direction:</td><td id="wind_dir"></td><td align="right">Speed:</td><td id="spd"></td></tr>
+    <tr><td align="right">Wind Speed:</td><td id="wind_spd"></td><td align="right">Altitude:</td><td id="alt"></td></tr>
 
-<table border="1">
-    <tr><th>Paramemter</th><th>Value</th></tr>
-    <tr><td align="right">Pressure:</td><td id="press"></td></tr>
-    <tr><td align="right">Temperature:</td><td id="temp"></td></tr>
-    <tr><td align="right">RH:</td><td id="RH"></td></tr>
-    <tr><td align="right">Wind Direction:</td><td id="wind_dir"></td></tr>
-    <tr><td align="right">Wind Speed:</td><td id="wind_spd"></td></tr>
-    <tr><td align="right">Heading:</td><td id="heading"></td></tr>
-    <tr><td align="right">Roll:</td><td id="roll"></td></tr>
-    <tr><td align="right">Pitch:</td><td id="pitch"></td></tr>
 </table>
-
+<p></p>
+<a id="location" target="map" href="http://www.google.com/maps/place/">Location on Google Maps</a>
+<p></p>
+<div id="map"></div>
+<script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDPRqXLKN0OTL5tX6-Hpc5VMdRbMsnrhdU&callback=initMap">
+</script>
 <script>
-function loadDoc() {
+function loadDoc(callback) {
    var xhttp = new XMLHttpRequest();
    xhttp.onreadystatechange = function() {
       if (this.readyState == 4 && this.status == 200) {
          x = JSON.parse(this.responseText)
          document.getElementById("press").innerHTML = x.press+" hPa";
-         document.getElementById("RH").innerHTML = x.RH + "%";
+         document.getElementById("RH").innerHTML = x.RH + " %";
          document.getElementById("temp").innerHTML = x.temp + " deg C";
          document.getElementById("wind_dir").innerHTML = x.wind_dir + " deg";
          document.getElementById("wind_spd").innerHTML = x.wind_spd + " m/s";
          document.getElementById("heading").innerHTML = x.heading + " deg";
          document.getElementById("roll").innerHTML = x.roll + " deg";
          document.getElementById("pitch").innerHTML = x.pitch + " deg";
+         if (x.spd >= 0) {
+            document.getElementById("spd").innerHTML = Math.round(x.spd*1.15078) + " mph";
+         } else {
+            document.getElementById("spd").innerHTML = "-999 mph";
+         }
+         document.getElementById("location").href = "http://www.google.com/maps/place/" + x.lat + ","
+               + x.lon;
+         document.getElementById("alt").innerHTML = x.alt + " MSL";
+
+         //marker.setPosition( new google.maps.LatLng(x.lat, x.lon));
+         //map.panTo( new google.maps.LatLng(x.lat, x.lon));
+
+         //setTimeout(loadDoc, 7000);
+         callback();
+
       }
    };
 
    xhttp.open("GET", "/data", true);
    xhttp.send();
-
-   setTimeout(loadDoc, 7000);
 }
 
-setTimeout(loadDoc, 100);
+function initMap() {
+    loadDoc( function() {
+       var uluru = {lat: x.lat, lng: x.lon};
+       map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 8,
+          center: uluru
+       });
+       marker = new google.maps.Marker({
+          position: uluru,
+          map: map
+       });
+       setTimeout(mainLoop, 100);
+    })
+}
+
+function mainLoop() {
+    loadDoc( function() {
+       marker.setPosition( new google.maps.LatLng(x.lat, x.lon) );
+    });
+    setTimeout(mainLoop, 9500);
+}
 
 </script>
 
