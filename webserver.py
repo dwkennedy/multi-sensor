@@ -7,6 +7,7 @@ import sys
 import serial
 import pynmea2
 import random
+from os import rename
 
 PORT = 8000
 temp = -999.0
@@ -146,17 +147,22 @@ class Thread_B(threading.Thread):
                                 press = msg.data[9]
                                 xdrValid = time.time()
                                 print("\nTemp (C): %s  RH: %s  Pressure (hPa): %s" % (temp, RH, press))
-                                SASSI = "CLMP %f %f %s %s %s %s %s %s %s %s" % (lat, lon, course, spd, temp, temp, RH, press, wind_dir, wind_spd)
-                                print(SASSI)
-                                sassiFilename = "C:\\Users\\FOFS\\AppData\\Local\\Rasmussen Systems\\SASSI\\Outgoing\\%d.mmm" % int(time.time())
-                                print(sassiFilename)
-                                try:
-                                    sassiFile = open(sassiFilename, 'w')
-                                except:
-                                    print("Couldn't write SASSI file to " + sassiFilename)
-                                    pass
-                                sassiFile.write(SASSI)
-                                sassiFile.close()
+                                #SASSI = "CLMP %f %f %s %s %s %s %s %s %s %s" % (lat, lon, course, spd, temp, temp, RH, press, wind_dir, wind_spd)
+                                #print(SASSI)
+                                #tmpFilename = "C:\\Users\\FOFS\\AppData\\Local\\Rasmussen Systems\\SASSI\\Outgoing\\%d.mmm" % int(time.time())
+                                #sassiFilename = "C:\\Users\\FOFS\\AppData\\Local\\Rasmussen Systems\\SASSI\\Outgoing\\%d.mmm" % int(time.time())
+                                #print(sassiFilename)
+                                #try:
+                                #    sassiFile = open(tmpFilename, 'w')
+                                #except:
+                                #    print("Couldn't write SASSI file to " + tmpFilename)
+                                 #   pass
+                                #sassiFile.write(SASSI)
+                                #sassiFile.close()
+                                #try:
+                                #    os.rename(tmpFilename, sassiFilename);
+                                #except:
+                                #    print("Couldn't rename %s to %s" % (tmpFilename, sassiFilename));
                 except:
                     msg = pynmea2.parse(x.decode("utf-8"))
                     pass
