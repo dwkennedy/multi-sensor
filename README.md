@@ -31,7 +31,10 @@ https://github.com/adafruit/Adafruit_BMP085_Unified
 Python code
 serialReader.py: read from COM1 (Vaisala WXT536 all-in-one weather sensor) and COM18 (arduino logger), writing incoming lines to a single file
 
-requirements: python 3.5, pyserial, pynmea2 libraries.  I like using PIP to install pynmea2.  Python 3.6 might break the web server.
+requirements: python 3.5, pyserial, pynmea2, geomag libraries.  I like using PIP to install pynmea2.  Python 3.6 might break the web server.
+
+https://github.com/cmweiss/geomag
+https://pypi.python.org/pypi/geomag/
 
 revision history:
 Started around 5/18/2016 for CLAMPS2 trailer (v1.0)
