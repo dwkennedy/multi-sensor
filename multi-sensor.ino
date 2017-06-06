@@ -21,6 +21,7 @@
 #define SENSOR_ACCEL_OFFSET_X -0.40
 #define SENSOR_ACCEL_OFFSET_Y -0.18
 #define SENSOR_ACCEL_OFFSET_Z 0.41
+#define SAMPLES 600
 
 /* Assign a unique ID to the sensors */
 Adafruit_10DOF                dof   = Adafruit_10DOF();
@@ -120,6 +121,8 @@ void loop(void)
 
   float temperature;
   float heading;
+  float mag_x, mag_y, mag_z;
+  float accel_x, accel_y, accel_z;
   char c;
 
   // trigger on incoming GPS sentence
@@ -129,9 +132,10 @@ void loop(void)
 
   // read/print GPS stings until pause after end of line character
   //  i.e. \n newline received, and no characters immediately available.
-  //  there is much jitter in GPS output timing.  it's roughly 1 sec
+  //  there is much jitter in GPS output timing. 
   //   so keep copying characters until a newline is seen, and continue
-  //   to wait for sentences for at least  800 msec or so.
+  //   to wait for sentences for at least  XXXX msec or so.
+  //   XXXX depends on frequency of GPS output.
   
   long gpsTimeout = millis();
   if(mySerial.available()) {
@@ -140,31 +144,64 @@ void loop(void)
         c = mySerial.read();
         Serial.print(c);
       }
-    } while ((c != '\n') || ((millis() - gpsTimeout) < 2000));
+    } while ((c != '\n') || ((millis() - gpsTimeout) < 1000));
+    if (c != '\n') {
+      Serial.print('\n');
+    }
   }
+
+   mag_x = 0;
+   mag_y = 0;
+   mag_z = 0;
+
+   accel_x = 0;
+   accel_y = 0;
+   accel_z = 0;
+   
+    for (int counter=0; counter <SAMPLES; counter++) {
+     while (!mag.getEvent(&mag_event)) {
+        //Serial.println("Failure in magnetometer");
+     }
+     while (!accel.getEvent(&accel_event)) {
+       //Serial.println("Failure in accelerometer");
+     }
   
-  while(!accel.getEvent(&accel_event)) {
-    
+  
+     mag_x += mag_event.magnetic.x;
+     mag_y += mag_event.magnetic.y;
+     mag_z += mag_event.magnetic.z;
+     
+     accel_x += accel_event.acceleration.x;
+     accel_y += accel_event.acceleration.y;
+     accel_z += accel_event.acceleration.z;
   }
-  while(!mag.getEvent(&mag_event)) {
-    
-  }
-  while(!bmp.getEvent(&bmp_event)) {
+
+  mag_x = mag_x/SAMPLES;
+  mag_y = mag_y/SAMPLES;
+  mag_z = mag_z/SAMPLES;
+
+  accel_x = accel_x/SAMPLES;
+  accel_y = accel_y/SAMPLES;
+  accel_z = accel_z/SAMPLES;
+
+  // apply 2D correction for hard iron offsets
+  mag_x -= SENSOR_MAG_OFFSET_X;
+  mag_y -= SENSOR_MAG_OFFSET_Y;
+  mag_z -= SENSOR_MAG_OFFSET_Z;
+  mag_z /= 2;  // output of z axis is double
+
+  // apply accelerometer offsets
+  accel_x -= SENSOR_ACCEL_OFFSET_X; 
+  accel_y -= SENSOR_ACCEL_OFFSET_Y; 
+  accel_z -= SENSOR_ACCEL_OFFSET_Z; 
+
+   while(!bmp.getEvent(&bmp_event)) {
     
   }
   bmp.getTemperature(&temperature);
 
-  // apply 2D correction for hard iron offsets
-  mag_event.magnetic.x -= SENSOR_MAG_OFFSET_X;
-  mag_event.magnetic.y -= SENSOR_MAG_OFFSET_Y;
-  mag_event.magnetic.z -= SENSOR_MAG_OFFSET_Z;
-  mag_event.magnetic.z /= 2;  // output of z axis is double
+  heading = 180 + 57.2957795131 * atan2(mag_y, mag_x);
 
-  heading = 180 + 57.2957795131 * atan2(mag_event.magnetic.y, mag_event.magnetic.x);
-  // apply accelerometer offsets
-  accel_event.acceleration.x -= SENSOR_ACCEL_OFFSET_X; 
-  accel_event.acceleration.y -= SENSOR_ACCEL_OFFSET_Y; 
-  accel_event.acceleration.z -= SENSOR_ACCEL_OFFSET_Z; 
 
 
   // Use this code for calibration
@@ -189,7 +226,7 @@ void loop(void)
   dof.accelGetOrientation(&accel_event, &orientation);
 
   // compute heading from mag sensor readings
-  dof.magGetOrientation(SENSOR_AXIS_Z, &mag_event, &orientation);
+  //dof.magGetOrientation(SENSOR_AXIS_Z, &mag_event, &orientation);
 
   strcpy (gpsMessage, "$PCLMP2,");  // initialize the string
   dtostrf(orientation.roll, 0, 2, buffer);
