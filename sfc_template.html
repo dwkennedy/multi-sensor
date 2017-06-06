@@ -12,12 +12,12 @@
 </head>
 <body>
 
-<table style="font-size:200%" border="1">
-    <tr><td align="right">Pressure:</td><td id="press"></td><td align="right">Heading:</td><td id="heading"></td><td align="right">Declination:</td><td id="declination"></td></tr>
+<table style="font-size:200%" border="1" width="100%">
+    <tr><td align="right">Pressure:</td><td id="press"></td><td align="right">Mag Heading:</td><td id="mag_heading"></td><td align="right">Declination:</td><td id="declination"></td></tr>
     <tr><td align="right">Temperature:</td><td id="temp"></td><td align="right">Roll:</td><td id="roll"></td><td align="right">Latitude:</td><td id="lat"></td></tr>
     <tr><td align="right">RH:</td><td id="RH"></td><td align="right">Pitch:</td><td id="pitch"></td><td align="right">Longitude:</td><td id="lon"></td></tr>
     <tr><td align="right">Wind Direction:</td><td id="wind_dir"></td><td align="right">Speed:</td><td id="spd"></td><td align="right">GPS course:</td><td id="course"></td></tr>
-    <tr><td align="right">Wind Speed:</td><td id="wind_spd"></td><td align="right">Altitude:</td><td id="alt"></td><td align="right">True heading:</td><td id="true"></td></tr>
+    <tr><td align="right">Wind Speed:</td><td id="wind_spd"></td><td align="right">Altitude:</td><td id="alt"></td><td align="right">True heading:</td><td id="true_heading"></td></tr>
 
 </table>
 <p></p>
@@ -36,7 +36,7 @@ function lookupMag(lat, lon) {
       xmlDoc = parser.parseFromString(this.responseText, "text/xml");
       var declination = parseFloat(document.getElementById("declination").innerHTML = xmlDoc.getElementsByTagName("declination")[0].childNodes[0].nodeValue);
       document.getElementById("declination").innerHTML = declination.toFixed(2) + " deg E";
-      document.getElementById("true").innerHTML = (parseFloat(x.heading) + declination).toFixed(2) + " deg";
+      document.getElementById("true_heading").innerHTML = (parseFloat(x.mag_heading) + declination).toFixed(2) + " deg";
    }
    xhttp.open("GET", 'https://www.ngdc.noaa.gov/geomag-web/calculators/calculateDeclination?lat1='+lat+'&lon1='+lon+'&resultFormat=xml', true);
    xhttp.send();
@@ -51,9 +51,9 @@ function loadDoc(callback) {
          document.getElementById("press").innerHTML = x.press+" hPa";
          document.getElementById("RH").innerHTML = x.RH + " %";
          document.getElementById("temp").innerHTML = x.temp + " deg C";
-         document.getElementById("wind_dir").innerHTML = x.wind_dir + " deg";
-         document.getElementById("wind_spd").innerHTML = x.wind_spd + " m/s";
-         document.getElementById("heading").innerHTML = x.heading + " deg";
+         document.getElementById("wind_dir").innerHTML = x.wind_dir.toFixed(0) + " deg";
+         document.getElementById("wind_spd").innerHTML = x.wind_spd.toFixed(1) + " m/s";
+         document.getElementById("mag_heading").innerHTML = x.mag_heading.toFixed(1) + " deg";
          document.getElementById("roll").innerHTML = x.roll + " deg";
          document.getElementById("pitch").innerHTML = x.pitch + " deg";
          if (x.spd >= 0) {
@@ -64,11 +64,13 @@ function loadDoc(callback) {
          document.getElementById("location").href = "http://www.google.com/maps/place/" + x.lat + ","
                + x.lon;
          document.getElementById("alt").innerHTML = x.alt + " MSL";
-         document.getElementById("lat").innerHTML = parseFloat(x.lat).toFixed(6) + " deg N";
-         document.getElementById("lon").innerHTML = parseFloat(x.lon).toFixed(6) + " deg E";
+         document.getElementById("declination").innerHTML = x.declination.toFixed(1) + " deg E";
+         document.getElementById("lat").innerHTML = x.lat.toFixed(6) + " deg N";
+         document.getElementById("lon").innerHTML = x.lon.toFixed(6) + " deg E";
          document.getElementById("course").innerHTML = x.course + " deg";
+         document.getElementById("true_heading").innerHTML = x.true_heading.toFixed(1) + " deg";
 
-         lookupMag(x.lat, x.lon);
+         //lookupMag(x.lat, x.lon);
 
          //marker.setPosition( new google.maps.LatLng(x.lat, x.lon));
          //map.panTo( new google.maps.LatLng(x.lat, x.lon));

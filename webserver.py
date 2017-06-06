@@ -6,6 +6,7 @@ import time
 import sys
 import serial
 import pynmea2
+import geomag
 import random
 from os import rename
 
@@ -15,7 +16,10 @@ press = -999.0
 RH = -999.0
 wind_spd = -999.0
 wind_dir = -999.0
-heading = -999.0
+win_dir_nose_rel = -999.0
+mag_heading = -999.0
+true_heading = -999.0
+declination = 0
 roll = -999.0
 pitch = -999.0
 lat = -999.0
@@ -40,8 +44,8 @@ class MyHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
             self.wfile.write(string.encode('utf-8'))
         elif self.path == '/data':
             string = json.dumps({"temp": temp, "press": press, "RH": RH, "wind_spd": wind_spd, "wind_dir": wind_dir,
-                                 "heading": heading, "roll": roll, "pitch": pitch, "lat":lat, "lon":lon, "course":course,
-                                 "spd":spd, "alt":alt})
+                                 "mag_heading": mag_heading, "true_heading": true_heading, "declination": declination,
+                                 "roll": roll, "pitch": pitch, "lat":lat, "lon":lon, "course":course, "spd":spd, "alt":alt})
             self.send_header('Content-type', 'application/json')
             self.end_headers()
             self.flush_headers()
@@ -85,9 +89,8 @@ class Thread_A(threading.Thread):
         self.name = name
 
     def run(self):
-        global press
-        global temp  # made global here
-        global RH, wind_spd, wind_dir
+        global temp, press, RH, wind_spd, wind_dir, mag_heading, true_heading, declination
+        global roll, pitch, lat, lon, course, spd, alt, wind_dir_nose_rel
 
         Handler = MyHTTPRequestHandler
         httpd = socketserver.TCPServer(("", PORT), Handler)
@@ -101,7 +104,8 @@ class Thread_B(threading.Thread):
         self.name = name
 
     def run(self):
-        global temp, press, RH, wind_spd, wind_dir, heading, roll, pitch, lat, lon, course, spd, alt
+        global temp, press, RH, wind_spd, wind_dir, mag_heading, true_heading, declination
+        global roll, pitch, lat, lon, course, spd, alt
         filename = time.strftime("surface_data_%Y%m%d.sfc")
         print("Opening new file: ", filename)
         file = open(filename, 'a')
@@ -123,30 +127,40 @@ class Thread_B(threading.Thread):
 
             while (wxt.in_waiting):
                 x = wxt.readline()
-                msg = pynmea2.parse(x.decode("utf-8"))
+
                 try:
+                    msg = pynmea2.parse(x.decode("utf-8"))
                     if msg.talker == 'WI':
                         if msg.sentence_type == 'MWV':
-                            wind_dir = msg.data[0]
-                            wind_spd = msg.data[2]
+                            wind_dir_nose_rel = float(msg.data[0])
+                            wind_dir = float(msg.data[0]) + mag_heading + declination
+                            if wind_dir < 0:
+                                wind_dir = -999.0
+                            if wind_dir > 360.0:
+                                wind_dir -= 360.0
+                            wind_spd = float(msg.data[2])
+                            #print (msg)
+                            msg.data[0] = str(round(wind_dir))
+                            #print (msg)
+                            x = (str(msg)+'\n').encode("utf-8")
                             mwvValid = time.time()
 
-                            print("\nWind Direction (deg): " + wind_dir + "  Wind Speed (m/s): " + wind_spd
-                                  + "  Data Status (A=valid): " + msg.data[4])
+                            print("Wind Direction (deg): %.1f  Wind Speed (m/s): %.1f  Nose Rel (deg): %.1f  Data Status (A=valid): %s"
+                                  % (wind_dir, wind_spd, wind_dir_nose_rel, msg.data[4]))
                 except:
-                    msg = pynmea2.parse(x.decode("utf-8"))
                     pass
 
                 try:
+                    msg = pynmea2.parse(x.decode("utf-8"))
                     if msg.talker == 'WI':
                         if msg.sentence_type == 'XDR':
                             if (msg.data[0] == 'C' and int(msg.data[3]) == 0):  # temp, humidity, pressure message
                                 # print(line)
-                                temp = msg.data[1]
-                                RH = msg.data[5]
-                                press = msg.data[9]
+                                temp = float(msg.data[1])
+                                RH = float(msg.data[5])
+                                press = float(msg.data[9])
                                 xdrValid = time.time()
-                                print("\nTemp (C): %s  RH: %s  Pressure (hPa): %s" % (temp, RH, press))
+                                print("\nTemp (C): %.1f  RH: %.1f  Pressure (hPa): %.1f" % (temp, RH, press))
                                 #SASSI = "CLMP %f %f %s %s %s %s %s %s %s %s" % (lat, lon, course, spd, temp, temp, RH, press, wind_dir, wind_spd)
                                 #print(SASSI)
                                 #tmpFilename = "C:\\Users\\FOFS\\AppData\\Local\\Rasmussen Systems\\SASSI\\Outgoing\\%d.mmm" % int(time.time())
@@ -164,7 +178,6 @@ class Thread_B(threading.Thread):
                                 #except:
                                 #    print("Couldn't rename %s to %s" % (tmpFilename, sassiFilename));
                 except:
-                    msg = pynmea2.parse(x.decode("utf-8"))
                     pass
 
                 #print (msg.talker)
@@ -188,16 +201,18 @@ class Thread_B(threading.Thread):
 
             while (gps.in_waiting):
                 x = gps.readline()
+
                 try:
                     msg = pynmea2.parse(x.decode("utf-8"))
                     #print(msg.talker)
                     if msg.manufacturer == 'CLM':
-                        roll = msg.data[1]
-                        pitch = msg.data[2]
-                        heading = msg.data[3]
-                        print("\nHeading (mag): " + heading + " Roll: " + roll + " Pitch: " + pitch)
+                        roll = float(msg.data[1])
+                        pitch = float(msg.data[2])
+                        mag_heading = float(msg.data[3])
+                        true_heading = mag_heading + declination
+                        print("Mag heading: %.2f True heading: %.2f Roll: %.2f Pitch: %.2f" % (mag_heading, true_heading, roll, pitch))
                 except:
-                    #print("error")
+                    #print("PCLMP parse error")
                     pass
 
                 try:
@@ -205,10 +220,16 @@ class Thread_B(threading.Thread):
                     if msg.talker == 'GP':  # decode GPRMC and GPGGA here.  update time/date variables
                         if msg.sentence_type == 'RMC':
                             if msg.data[1] == 'A':
-                                spd = msg.data[6]
-                                course = msg.data[7]
+                                spd = float(msg.data[6])
+                                course = float(msg.data[7])
                                 lat = msg.latitude
                                 lon = msg.longitude
+                                if alt == -999.0:
+                                    pass
+                                    declination = geomag.declination(lat,lon)
+                                else:
+                                    pass
+                                    declination = geomag.declination(lat,lon,alt)
                                 #lat = 35
                                 #lon = -97.5
                             else:
@@ -217,6 +238,13 @@ class Thread_B(threading.Thread):
                                 # generate test locations when gps is not locked
                                 #lat = 35 + random.random()
                                 #lon = -97 + random.random()
+                except:
+                    pass
+                    #print("GPRMC parse error")
+
+                try:
+                    msg = pynmea2.parse(x.decode("utf-8"))
+                    if msg.talker == 'GP':
 
                         if msg.sentence_type == 'GGA':
                             if msg.gps_qual > 0:
@@ -227,6 +255,7 @@ class Thread_B(threading.Thread):
                                 #'184353.07', '1929.045', 'S', '02410.506', 'E', '1', '04', '2.6', '100.00', 'M',
                                 #'-33.9', 'M', '', '0000')
                 except:
+                    #print("GPGGA parse error")
                     pass
 
                 print(x.decode("utf-8"), end="")
