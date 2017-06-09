@@ -48,26 +48,26 @@ function loadDoc(callback) {
    xhttp.onreadystatechange = function() {
       if (this.readyState == 4 && this.status == 200) {
          x = JSON.parse(this.responseText)
-         document.getElementById("press").innerHTML = x.press+" hPa";
-         document.getElementById("RH").innerHTML = x.RH + " %";
-         document.getElementById("temp").innerHTML = x.temp + " deg C";
+         document.getElementById("press").innerHTML = x.press.toFixed(1)+" hPa";
+         document.getElementById("RH").innerHTML = x.RH.toFixed(1) + " %";
+         document.getElementById("temp").innerHTML = x.temp.toFixed(1) + " deg C";
          document.getElementById("wind_dir").innerHTML = x.wind_dir.toFixed(0) + " deg";
          document.getElementById("wind_spd").innerHTML = x.wind_spd.toFixed(1) + " m/s";
          document.getElementById("mag_heading").innerHTML = x.mag_heading.toFixed(1) + " deg";
-         document.getElementById("roll").innerHTML = x.roll + " deg";
-         document.getElementById("pitch").innerHTML = x.pitch + " deg";
-         if (x.spd >= 0) {
+         document.getElementById("roll").innerHTML = x.roll.toFixed(1) + " deg";
+         document.getElementById("pitch").innerHTML = x.pitch.toFixed(1) + " deg";
+         if (x.spd.toFixed(1) >= 0.0 & x.spd.toFixed(1) != -999.0) {
             document.getElementById("spd").innerHTML = Math.round(x.spd*1.15078) + " mph";
          } else {
             document.getElementById("spd").innerHTML = "-999 mph";
          }
          document.getElementById("location").href = "http://www.google.com/maps/place/" + x.lat + ","
                + x.lon;
-         document.getElementById("alt").innerHTML = x.alt + " MSL";
+         document.getElementById("alt").innerHTML = x.alt.toFixed(1) + " MSL";
          document.getElementById("declination").innerHTML = x.declination.toFixed(1) + " deg E";
          document.getElementById("lat").innerHTML = x.lat.toFixed(6) + " deg N";
          document.getElementById("lon").innerHTML = x.lon.toFixed(6) + " deg E";
-         document.getElementById("course").innerHTML = x.course + " deg";
+         document.getElementById("course").innerHTML = x.course.toFixed(1) + " deg";
          document.getElementById("true_heading").innerHTML = x.true_heading.toFixed(1) + " deg";
 
          //lookupMag(x.lat, x.lon);
