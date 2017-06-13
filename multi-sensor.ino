@@ -127,7 +127,7 @@ void loop(void)
 
   // trigger on incoming GPS sentence
   while(!mySerial.available()) {
-    delay(1);
+    delay(2);
   }
 
   // read/print GPS stings until pause after end of line character
@@ -144,9 +144,9 @@ void loop(void)
         c = mySerial.read();
         Serial.print(c);
       }
-    } while ((c != '\n') || ((millis() - gpsTimeout) < 1000));
+    } while ((c != '\n') || ((millis() - gpsTimeout) < 2000));
     if (c != '\n') {
-      Serial.print('\n');
+      Serial.println("");
     }
   }
 
