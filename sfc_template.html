@@ -158,8 +158,8 @@ function initMap() {
           position: uluru,
           map: map
        });
-       var centerControlDiv = document.createElement('div');
-       var centerControl = new CenterControl(centerControlDiv, map, uluru);
+       centerControlDiv = document.createElement('div');
+       centerControl = new CenterControl(centerControlDiv, map, uluru);
        map.controls[google.maps.ControlPosition.TOP_LEFT].push(centerControlDiv);
        setTimeout(mainLoop, 100);
     })
@@ -167,8 +167,9 @@ function initMap() {
 
 function mainLoop() {
     loadDoc( function() {
-       marker.setPosition( new google.maps.LatLng(x.lat, x.lon) );
-       centerControl.setCenter( new google.maps.LatLng(x.lat, x.lon) );
+       var position = new google.maps.LatLng(x.lat, x.lon);
+       marker.setPosition( position );
+       centerControl.setCenter( position );
     });
     setTimeout(mainLoop, 9500);
 }
