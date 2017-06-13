@@ -168,7 +168,7 @@ function initMap() {
 function mainLoop() {
     loadDoc( function() {
        marker.setPosition( new google.maps.LatLng(x.lat, x.lon) );
-       CenterControl.setCenter( new google.maps.LatLng(x.lat, x.lon) );
+       centerControl.setCenter( new google.maps.LatLng(x.lat, x.lon) );
     });
     setTimeout(mainLoop, 9500);
 }
