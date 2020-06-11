@@ -1,0 +1,3 @@
+[submodule "geomag"]
+	path = geomag
+	url = https://github.com/chompar4/geomag

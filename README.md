@@ -29,12 +29,14 @@ https://github.com/adafruit/Adafruit_BMP085_Unified
 
 
 Python code
-serialReader.py: read from COM1 (Vaisala WXT536 all-in-one weather sensor) and COM18 (arduino logger), writing incoming lines to a single file
+serialReader.py: read from COM1 (Vaisala WXT536 all-in-one weather sensor) and COM18 (arduino logger), writing incoming lines to a single file  (Obsolete)
 
-requirements: python 3.5, pyserial, pynmea2, geomag libraries.  I like using PIP to install pynmea2.  Python 3.6 might break the web server.
+decodeGPS.py: read GPS and special NMEA sentences from arduino device, publish to MQTT topic gps/SERIAL_NUMBER
 
-https://github.com/cmweiss/geomag
-https://pypi.python.org/pypi/geomag/
+requirements: python 3.5+, pyserial, pynmea2, geomag libraries. use ubuntu apt-get to install python3-nmea2, python3-serial.  get geomag from https://github.com/chompar4/geomag.
+
+obsolete: https://github.com/cmweiss/geomag https://pypi.python.org/pypi/geomag/
+python3 compatible and WMM2020 coefficients --> https://github.com/chompar4/geomag
 
 revision history:
 Started around 5/18/2016 for CLAMPS2 trailer (v1.0)
@@ -45,7 +47,12 @@ Parse NMEA strings into human readable format
 Expose web interface for present weather conditions and trailer orientation
 Calibrated magnetometer, added code for compass heading
 
-TODO:
+V2.0 improvements:
+publish to MQTT
+update geomag to WMM2020
+all-around better error handling
+
+TODO: (out of date)
 Parse GPS messages and display date/time/location/elevation.
 Include link to Google Maps/Google Earth
 make nicer present weather display (text, or ultimately graphical; show recent history and trend
