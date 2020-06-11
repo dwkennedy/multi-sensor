@@ -19,6 +19,7 @@ import paho.mqtt.client as mqtt
 
 missing_values = {
    'time': -999.0,
+   'gps_time': -999.0,
    'lat': -999.0,
    'lon': -999.0,
    'course': -999.0,
@@ -90,7 +91,7 @@ def main():
                                             msg.timestamp.minute, \
                                             msg.timestamp.second, \
                                             -1, -1, 0 ))
-                   current['time'] = timegm(gps_tuple)
+                   current['gps_time'] = timegm(gps_tuple)
                    if(msg.lon_dir == 'S'):
                       current['log'] = -float(msg.lon)/100
                    else:
@@ -127,6 +128,7 @@ def main():
 
             if (last_seen_gga == last_seen_rmc):
                #print("Got a complete set!  let's submit a MQTT message.")
+               current['time']=int(time.time()*10)/10
                if(current['alt_msl'] == -999.0):
                   current['declination'] = int(geomag.declination(current['lat'],current['lon']))
                else:
