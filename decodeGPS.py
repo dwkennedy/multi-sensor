@@ -93,7 +93,7 @@ def main():
                                             -1, -1, 0 ))
                    current['gps_time'] = timegm(gps_tuple)
                    if(msg.lon_dir == 'S'):
-                      current['log'] = -float(msg.lon)/100
+                      current['lon'] = -float(msg.lon)/100
                    else:
                       current['lon'] = float(msg.lon)/100
                    if(msg.lat_dir == 'W'):
