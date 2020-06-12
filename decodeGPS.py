@@ -92,14 +92,14 @@ def main():
                                             msg.timestamp.second, \
                                             -1, -1, 0 ))
                    current['gps_time'] = timegm(gps_tuple)
-                   if(msg.lon_dir == 'S'):
-                      current['lon'] = -float(msg.lon)/100
-                   else:
-                      current['lon'] = float(msg.lon)/100
-                   if(msg.lat_dir == 'W'):
+                   if(msg.lat_dir == 'S'):
                       current['lat'] = -float(msg.lat)/100
                    else:
                       current['lat'] = float(msg.lat)/100
+                   if(msg.lon_dir == 'W'):
+                      current['lon'] = -float(msg.lon)/100
+                   else:
+                      current['lon'] = float(msg.lon)/100
                    current['spd_kts'] = msg.spd_over_grnd  # knots
                    current['course'] = msg.true_course      # only valid when moving 
                    next
@@ -113,11 +113,11 @@ def main():
                       current['alt_msl'] = msg.altitude
                    if(msg.geo_sep_units=='M'):
                       current['geo_sep'] = msg.geo_sep
-                   if(msg.lon_dir == 'S'):
-                      current['log'] = -float(msg.lon)/100
+                   if(msg.lon_dir == 'W'):
+                      current['lon'] = -float(msg.lon)/100
                    else:
                       current['lon'] = float(msg.lon)/100
-                   if(msg.lat_dir == 'W'):
+                   if(msg.lat_dir == 'S'):
                       current['lat'] = -float(msg.lat)/100
                    else:
                       current['lat'] = float(msg.lat)/100
