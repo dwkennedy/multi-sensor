@@ -16,6 +16,7 @@ import serial
 import pynmea2
 import geomag
 import paho.mqtt.client as mqtt
+import numpy as np
 
 missing_values = {
    'time': -999.0,
@@ -34,6 +35,26 @@ missing_values = {
    'true_heading': -999.0,
    'declination': -999.0,
 }
+"""
+
+missing_values = {
+   'time': np.nan,
+   'gps_time': np.nan,
+   'lat': np.nan,
+   'lon': np.nan,
+   'course': np.nan,
+   'spd_kts': np.nan,
+   'alt_msl': np.nan,
+   'geo_sep': np.nan,
+   'internal_pres': np.nan,
+   'internal_temp': np.nan,
+   'roll': np.nan,
+   'pitch': np.nan,
+   'mag_heading': np.nan,
+   'true_heading': np.nan,
+   'declination': np.nan,
+}
+"""
 
 LOCAL_BROKER_ADDRESS = '127.0.0.1'  # MQTT broker address
 REMOTE_BROKER_ADDRESS = 'kennedy.tw'  # remote MQTT broker address
@@ -92,14 +113,22 @@ def main():
                                             msg.timestamp.second, \
                                             -1, -1, 0 ))
                    current['gps_time'] = timegm(gps_tuple)
+
+                   # convert goofy GPS DDmm.mm to decimal degrees
+                   DD = int(float(msg.lat)/100)
+                   mm = float(msg.lat)-DD*100
+                   DDmm = DD+mm/60
                    if(msg.lat_dir == 'S'):
-                      current['lat'] = -float(msg.lat)/100
+                      current['lat'] = -DDmm
                    else:
-                      current['lat'] = float(msg.lat)/100
+                      current['lat'] = DDmm
+                   DD = int(float(msg.lon)/100)
+                   mm = float(msg.lon)-DD*100
+                   DDmm = DD+mm/60
                    if(msg.lon_dir == 'W'):
-                      current['lon'] = -float(msg.lon)/100
+                      current['lon'] = -DDmm
                    else:
-                      current['lon'] = float(msg.lon)/100
+                      current['lon'] = DDmm
                    current['spd_kts'] = msg.spd_over_grnd  # knots
                    current['course'] = msg.true_course      # only valid when moving 
                    next
@@ -113,14 +142,21 @@ def main():
                       current['alt_msl'] = msg.altitude
                    if(msg.geo_sep_units=='M'):
                       current['geo_sep'] = msg.geo_sep
-                   if(msg.lon_dir == 'W'):
-                      current['lon'] = -float(msg.lon)/100
-                   else:
-                      current['lon'] = float(msg.lon)/100
+                   # convert goofy GPS DDmm.mm to decimal degrees
+                   DD = int(float(msg.lat)/100)
+                   mm = float(msg.lat)-DD*100
+                   DDmm = DD+mm/60
                    if(msg.lat_dir == 'S'):
-                      current['lat'] = -float(msg.lat)/100
+                      current['lat'] = -DDmm
                    else:
-                      current['lat'] = float(msg.lat)/100
+                      current['lat'] = DDmm
+                   DD = int(float(msg.lon)/100)
+                   mm = float(msg.lon)-DD*100
+                   DDmm = DD+mm/60
+                   if(msg.lon_dir == 'W'):
+                      current['lon'] = -DDmm
+                   else:
+                      current['lon'] = DDmm
                    next
 
                 if((msg.talker=='PC' and msg.sentence_type=='LMP') and msg.gps_qual>0 ):
