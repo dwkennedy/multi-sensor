@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# altitude is sum of geoidal seperation and antenna altitude
+# altitude is sum of geoidal seperation and ellipsoid altitude (ie. GPGGA provides an estimate of MSL as well as the undulation)
 # https://gis.stackexchange.com/questions/174046/relation-between-geoidal-separation-and-antenna-altitude-in-gga-sentence
 
 # read sentences from GPS (multi-sensor unit), decode, and publish to MQTT as JSON strings
@@ -123,10 +123,17 @@ def main():
                       current['lat'] = float(msg.lat)/100
                    next
 
+                if((msg.talker=='PC' and msg.sentence_type=='LMP') and msg.gps_qual>0 ):
+                    last_seen_pclmp = msg.timestamp
+                    roll = float(msg.data[1])
+                    pitch = float(msg.data[2])
+                    mag_heading = float(msg.data[3])
+                    print("Mag heading: {:.2f} Roll: {:.2f} Pitch: {.2f}".format(mag_heading, roll, pitch))
+
             else:
                time.sleep(0.1)
 
-            if (last_seen_gga == last_seen_rmc):
+            if ((last_seen_gga == last_seen_rmc)): # and (last_seen_gga == last_seen_pclmp)):
                #print("Got a complete set!  let's submit a MQTT message.")
                current['time']=int(time.time()*10)/10
                if(current['alt_msl'] == -999.0):
@@ -147,67 +154,10 @@ def main():
                # reset last seen messages, prepare for new pair
                last_seen_rmc = datetime.time(0,0,2)
                last_seen_gga = datetime.time(0,0,1)
+               last_seen_pclmp = datetime.time(0,0,3)
                current = missing_values
 
 
-            """
-                    print(msg.talker)
-                    print(msg.latitude)
-                    if msg.manufacturer == 'CLM':
-                        roll = float(msg.data[1])
-                        pitch = float(msg.data[2])
-                        mag_heading = float(msg.data[3])
-                        true_heading = mag_heading + declination
-                        print("Mag heading: %.2f True heading: %.2f Roll: %.2f Pitch: %.2f" % (mag_heading, true_heading, roll, pitch))
-                except:
-                    print("PCLMP parse error")
-                    raise
-
-                try:
-                    msg = pynmea2.parse(x.decode("ISO-8859-1"))
-                    if msg.talker == 'GP':  # decode GPRMC and GPGGA here.  update time/date variables
-                        if msg.sentence_type == 'RMC':
-                            if msg.data[1] == 'A':
-                                spd = float(msg.data[6])
-                                course = float(msg.data[7])
-                                lat = msg.latitude
-                                lon = msg.longitude
-                                if alt == -999.0:
-                                    pass
-                                    declination = geomag.declination(lat,lon)
-                                else:
-                                    pass
-                                    declination = geomag.declination(lat,lon,alt)
-                                #lat = 35
-                                #lon = -97.5
-                            else:
-                                spd = -999.0
-                                course = -999.0
-                                # generate test locations when gps is not locked
-                                #lat = 35 + random.random()
-                                #lon = -97 + random.random()
-                except:
-                    pass
-                    print("GPRMC parse error")
-
-                try:
-                    msg = pynmea2.parse(x.decode("ISO-8859-1"))
-                    if msg.talker == 'GP':
-
-                        if msg.sentence_type == 'GGA':
-                            if msg.gps_qual > 0:
-                                alt = msg.altitude
-                            else:
-                                alt = -999.0
-                                #msg = pynmea2.GGA('GP', 'GGA', (
-                                #'184353.07', '1929.045', 'S', '02410.506', 'E', '1', '04', '2.6', '100.00', 'M',
-                                #'-33.9', 'M', '', '0000')
-                except:
-                    print("GPGGA parse error")
-                    pass
-
-                print(x.decode("ISO-8859-1"), end="")
-"""
 
 if (__name__ == '__main__'):
     main()
