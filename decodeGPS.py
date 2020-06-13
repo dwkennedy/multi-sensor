@@ -74,7 +74,7 @@ def main():
         current = missing_values  # we fill these in as we receive sentences
 
         FORMAT = '%(asctime)s %(levelname)s: %(message)s'
-        logging.basicConfig(level=logging.DEBUG, format=FORMAT, datefmt='%m/%d/%Y %H:%M:%S')
+        logging.basicConfig(level=logging.INFO, format=FORMAT, datefmt='%m/%d/%Y %H:%M:%S')
         logging.info("starting decodeGPS.py")
 
         client = mqtt.Client('gps-{}-cmd'.format(WXT_SERIAL))
@@ -207,8 +207,8 @@ def main():
                    current['declination'] = int(current['declination']*100)/100
                try:
                    mqttString = 'gps/{} {}'.format(WXT_SERIAL, json.dumps(current))
-                   logging.info('MQTT publish')
-                   logging.debug(mqttString)
+                   #logging.info('MQTT publish')
+                   logging.debug('MQTT pub: {}'.format(mqttString))
                    client.publish('gps/{}'.format(WXT_SERIAL), json.dumps(current))
                except:
                    logging.warning("MQTT pub: failure {}".format(mqttString))
