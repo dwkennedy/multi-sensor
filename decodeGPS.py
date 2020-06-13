@@ -74,7 +74,7 @@ def main():
         current = missing_values  # we fill these in as we receive sentences
 
         FORMAT = '%(asctime)s %(levelname)s: %(message)s'
-        logging.basicConfig(level=logging.INFO, format=FORMAT, datefmt='%m/%d/%Y %H:%M:%S')
+        logging.basicConfig(level=logging.DEBUG, format=FORMAT, datefmt='%m/%d/%Y %H:%M:%S')
         logging.info("starting decodeGPS.py")
 
         client = mqtt.Client('gps-{}-cmd'.format(WXT_SERIAL))
@@ -98,8 +98,8 @@ def main():
                 try:
                     msg = pynmea2.parse(x.decode("ISO-8859-1"))
                 except pynmea2.nmea.ParseError as e:
-                    logging.warning("pynmea2.nmea.ParseError: {}".format(e))
-                    logging.debug(x.decode('ISO-8859-1').strip())
+                    logging.debug("pynmea2.nmea.ParseError: {}".format(e))
+                    #logging.debug(x.decode('ISO-8859-1').strip())
 
                 if((msg.talker=='GN' and msg.sentence_type=='RMC') and msg.status=='A'):
                    #print(x.decode('ISO-8859-1').strip())
@@ -153,7 +153,10 @@ def main():
                    if(msg.altitude_units=='M'):
                       current['alt_msl'] = msg.altitude
                    if(msg.geo_sep_units=='M'):
-                      current['geo_sep'] = msg.geo_sep
+                      try:
+                         current['geo_sep'] = float(msg.geo_sep)
+                      except ValueError:
+                         current['geo_sep'] = None
 
                    try:
                        # convert goofy GPS DDmm.mm to decimal degrees
@@ -190,21 +193,21 @@ def main():
             else:
                time.sleep(0.1)  # on serial data available
 
-            if ((last_seen_gga == last_seen_rmc)): # and (last_seen_gga == last_seen_pclmp)):
+            if ((last_seen_gga == last_seen_rmc)):   # and (last_seen_gga == last_seen_pclmp)):
                #print("Got a complete set!  let's submit a MQTT message.")
-               current['time']=int(time.time()*100)/100  # unix epoch time to 2 places  
+               current['time']=round(time.time(),2)  # unix epoch time to 2 places  
                if(current['lat'] is not None and current['lon'] is not None):
                    if(current['alt_msl'] is None):
                        current['declination'] = geomag.declination(current['lat'],current['lon'])
                    else:
                        current['declination'] = geomag.declination(current['lat'],current['lon'],current['alt_msl'])
+                   current['declination'] = round(current['declination'],2)
                else:
                    current['declination'] = None
 
                if(current['mag_heading'] is not None and current['declination'] is not None):
                    current['true_heading'] = current['mag_heading'] + current['declination']
-                   current['true_heading'] = int(current['true_heading']*100)/100
-                   current['declination'] = int(current['declination']*100)/100
+                   current['true_heading'] = round(current['true_heading'],2)
                try:
                    mqttString = 'gps/{} {}'.format(WXT_SERIAL, json.dumps(current))
                    #logging.info('MQTT publish')
