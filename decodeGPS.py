@@ -230,6 +230,6 @@ if (__name__ == '__main__'):
             main()
         except Exception as e:
             logging.critical("unhandled exception in decodeGPS.py, {}".format(e))
-            raise
+            #raise
             time.sleep(5)
 
