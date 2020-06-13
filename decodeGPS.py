@@ -59,18 +59,23 @@ def on_message(client, userdata, message):
     print("message qos: {0}".format(message.qos))
     print("message retain flag: {0}".format(message.retain))
     command = message.payload.decode('ISO-8859-1')
-    print('{}: MQTT sub: {}: {}'.format(time.asctime(), message.topic, command))
+    logging.info('MQTT sub: {}: {}'.format(message.topic, command))
     command += '\r\n'
     try:
         gps.send(command.encode('ISO-8859-1'))
     except:
-        logger.warning("MQTT command send to GPS failed".format(time.asctime()))
+        logging.warning("MQTT command send to GPS failed".format(time.asctime()))
 
 def main():
         global gps
-        last_seen_rmc = None
-        last_seen_gga = None
+        last_seen_rmc = datetime.time(0,0,0,1)
+        last_seen_gga = datetime.time(0,0,0,2)
+        last_seen_pclmp = datetime.time(0,0,0,3)
         current = missing_values  # we fill these in as we receive sentences
+
+        FORMAT = '%(asctime)s %(levelname)s: %(message)s'
+        logging.basicConfig(level=logging.DEBUG, format=FORMAT, datefmt='%m/%d/%Y %H:%M:%S')
+        logging.info("starting decodeGPS.py")
 
         client = mqtt.Client('gps-{}-cmd'.format(WXT_SERIAL))
         client.on_message = on_message
@@ -89,13 +94,12 @@ def main():
         while True:
             if (gps.in_waiting):   # check for error here and try to reopen connection
                 x = gps.readline()
+                #logging.debug(x.decode('ISO-8859-1').strip())
                 try:
                     msg = pynmea2.parse(x.decode("ISO-8859-1"))
                 except pynmea2.nmea.ParseError as e:
-                    print('-------------------------------------')
-                    print(x.decode('ISO-8859-1'))
-                    print("pynmea2.nmea.ParseError: {}".format(e))
-                    print('-------------------------------------')
+                    logging.error("pynmea2.nmea.ParseError: {}".format(e))
+                    logging.error(x.decode('ISO-8859-1'))
 
                 if((msg.talker=='GN' and msg.sentence_type=='RMC') and msg.status=='A'):
                    #print(x.decode('ISO-8859-1').strip())
@@ -110,7 +114,7 @@ def main():
                    try:
                        current['gps_time'] = timegm(gps_tuple)
                    except ValueError as e:
-                       logging.info("Invalid time found in GNRMC sentence {}".format(e))
+                       logging.warning("Invalid time found in GNRMC sentence {}".format(e))
                        logging.info(x.decode('ISO-8859-1').strip())
 
                    try:
@@ -181,7 +185,7 @@ def main():
                     current['roll'] = float(msg.data[1])
                     current['pitch'] = float(msg.data[2])
                     current['mag_heading'] = float(msg.data[3])
-                    print("Mag heading: {:.2f} Roll: {:.2f} Pitch: {.2f}".format(mag_heading, roll, pitch))
+                    logging.debug("Mag heading: {:.2f} Roll: {:.2f} Pitch: {.2f}".format(mag_heading, roll, pitch))
 
             else:
                time.sleep(0.1)  # on serial data available
@@ -203,15 +207,16 @@ def main():
                    current['declination'] = int(current['declination']*100)/100
                try:
                    mqttString = 'gps/{} {}'.format(WXT_SERIAL, json.dumps(current))
-                   logging.debug("MQTT pub: {}".format(mqttString))
+                   logging.info('MQTT publish')
+                   logging.debug(mqttString)
                    client.publish('gps/{}'.format(WXT_SERIAL), json.dumps(current))
                except:
-                   logger.warning("MQTT pub: failure {}".format(mqttString))
+                   logging.warning("MQTT pub: failure {}".format(mqttString))
 
                # reset last seen messages, prepare for new pair
-               last_seen_rmc = None
-               last_seen_gga = None
-               last_seen_pclmp = None
+               last_seen_rmc = datetime.time(0,0,0,1)
+               last_seen_gga = datetime.time(0,0,0,2)
+               last_seen_pclmp = datetime.time(0,0,0,3)
                current = missing_values
 
 
@@ -220,7 +225,8 @@ if (__name__ == '__main__'):
     while True:
         try:
             main()
-        except e:
-            logger.critical("unhandled exception in decodeGPS.py, {}".format(e))
+        except Exception as e:
+            logging.critical("unhandled exception in decodeGPS.py, {}".format(e))
+            raise
             time.sleep(5)
 
