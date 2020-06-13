@@ -99,7 +99,7 @@ def main():
                     msg = pynmea2.parse(x.decode("ISO-8859-1"))
                 except pynmea2.nmea.ParseError as e:
                     logging.warning("pynmea2.nmea.ParseError: {}".format(e))
-                    logging.warning(x.decode('ISO-8859-1').strip())
+                    logging.debug(x.decode('ISO-8859-1').strip())
 
                 if((msg.talker=='GN' and msg.sentence_type=='RMC') and msg.status=='A'):
                    #print(x.decode('ISO-8859-1').strip())
