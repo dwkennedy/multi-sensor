@@ -1,3 +1,6 @@
 [submodule "geomag"]
 	path = geomag
 	url = https://github.com/chompar4/geomag
+[submodule "geoidheight"]
+	path = geoidheight
+	url = https://github.com/vandry/geoidheight

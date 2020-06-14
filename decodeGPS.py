@@ -16,6 +16,7 @@ import json
 import serial
 import pynmea2
 import geomag
+import geoidheight.geoid
 import paho.mqtt.client as mqtt
 import numpy as np
 
@@ -33,8 +34,11 @@ missing_values = {
    'lon': None,          # longitude in decimal degrees, positive values are W
    'course': None,       # course over ground in degrees
    'spd_kts': None,      # speed over ground in knots
-   'alt_msl': None,      # altitude over MSL (negative below MSL), meters
+   'alt_msl': None,      # altitude above MSL (negative below MSL), meters
    'geo_sep': None,      # distance between WGS84 ellipsoid and GPS receiver geoid, meters
+   'geo_sep_egm2008': None, # distance between WGS84 ellipsoid and egm2008-1 geoid, meters
+   'alt_wgs84': None,     # altitude above wgs84 ellipsoid, meters
+   'alt_egm2008': None,   # altitude above egm2008-1 geoid (approx sea level), meters
    'internal_pres': None, # pressure from arduino sensor (BMP85)
    'internal_temp': None, # temperature from arduino sensor (BMP85) usually higher than room temp
    'roll': None,         # roll angle in degrees
@@ -43,6 +47,20 @@ missing_values = {
    'true_heading': None, # true heading, sum of mag_heading and declination
    'declination': None,  # computed using geomag delination function, WMM2020 model using GPS (lat/lon/alt
 }
+
+# function to convert string to float.  returns 'None' if the float conversion fails
+def safe_float(string):
+    try:
+        return(float(string))
+    except:
+        return(None)
+
+# function to convert string to int.  returns 'None' if the int conversion fails
+def safe_int(string):
+    try:
+        return(int(string))
+    except:
+        return(None)
 
 def isfloat(value):
   try:
@@ -68,6 +86,9 @@ def on_message(client, userdata, message):
 
 def main():
         global gps
+        global geoidheight
+
+        geoidheight = geoidheight.geoid.GeoidHeight()
         last_seen_rmc = datetime.time(0,0,0,1)
         last_seen_gga = datetime.time(0,0,0,2)
         last_seen_pclmp = datetime.time(0,0,0,3)
@@ -151,12 +172,9 @@ def main():
                    #print(repr(msg))
                    last_seen_gga = msg.timestamp
                    if(msg.altitude_units=='M'):
-                      current['alt_msl'] = msg.altitude
+                       current['alt_msl'] = msg.altitude
                    if(msg.geo_sep_units=='M'):
-                      try:
-                         current['geo_sep'] = float(msg.geo_sep)
-                      except ValueError:
-                         current['geo_sep'] = None
+                       current['geo_sep'] = safe_float(msg.geo_sep)
 
                    try:
                        # convert goofy GPS DDmm.mm to decimal degrees
@@ -182,13 +200,14 @@ def main():
                    except ValueError as e:
                        logging.info("Invalid lat/lon found in GNRMC sentence {}".format(e))
                        logging.info(x.decode('ISO-8859-1').strip())
-
+ 
                 if((msg.talker=='PC' and msg.sentence_type=='LMP') and msg.gps_qual>0 ):
                     last_seen_pclmp = msg.timestamp
-                    current['roll'] = float(msg.data[1])
-                    current['pitch'] = float(msg.data[2])
-                    current['mag_heading'] = float(msg.data[3])
+                    current['roll'] = safe_float(msg.data[1])
+                    current['pitch'] = safe_float(msg.data[2])
+                    current['mag_heading'] = safe_float(msg.data[3])
                     logging.debug("Mag heading: {:.2f} Roll: {:.2f} Pitch: {.2f}".format(mag_heading, roll, pitch))
+
 
             else:
                time.sleep(0.1)  # on serial data available
@@ -208,6 +227,18 @@ def main():
                if(current['mag_heading'] is not None and current['declination'] is not None):
                    current['true_heading'] = current['mag_heading'] + current['declination']
                    current['true_heading'] = round(current['true_heading'],2)
+
+               #calculate geoid height from model
+               if (current['lat'] is not None and current['lon'] is not None):
+                   current['geo_sep_egm2008'] = geoidheight.get(float(current['lat']),float(current['lon']))
+                   current['alt_wgs84'] = current['alt_msl']+current['geo_sep']
+                   current['alt_egm2008'] = current['alt_wgs84']-current['geo_sep_egm2008']
+               else:
+                   current['geo_sep_egm2008'] = None
+                   current['alt_wgs84'] = None
+                   current['alt_egm2008'] = None
+               
+               # publish the gps JSON 
                try:
                    mqttString = 'gps/{} {}'.format(WXT_SERIAL, json.dumps(current))
                    #logging.info('MQTT publish')
