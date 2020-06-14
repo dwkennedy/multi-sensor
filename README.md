@@ -1,6 +1,10 @@
 # multi-sensor
 Data logging from arduino leonardo with adafruit ultimate GPS and adafruit 10 DOF sensor board
 
+Fetch with 'git clone https://github.com/dwkennedy/multi-sensor'
+Then execute 'git submodule init' and 'git submodule update' to fetch all
+geoidheight and geomag data
+
 Arduino code
 multi-sensor:  reads GPS on softwareserial and I2C 10DOF board, prints to USB serial
 mutli-sensor-calib:  reads and averages 10DOF output for calibrating the magnetometer and accelerometer
