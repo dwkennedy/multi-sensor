@@ -1,4 +1,4 @@
-e!/usr/bin/python3
+#!/usr/bin/python3
 
 # altitude is sum of geoidal seperation and ellipsoid altitude (ie. GPGGA provides an estimate of MSL as well as the undulation)
 # https://gis.stackexchange.com/questions/174046/relation-between-geoidal-separation-and-antenna-altitude-in-gga-sentence
@@ -45,7 +45,7 @@ missing_values = {
    'pitch': None,        # pitch angle in degrees
    'mag_heading': None,  # magnetic compass heading in degrees
    'true_heading': None, # true heading, sum of mag_heading and declination
-   'declination': None,  # computed using geomag delination function, WMM2020 model using GPS (lat/lon/alt
+   'declination': None,  # computed using geomag delination function, WMM2020 model using GPS (lat/lon/alt)
 }
 
 # function to convert string to float.  returns 'None' if the float conversion fails
