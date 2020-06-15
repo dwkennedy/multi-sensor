@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+e!/usr/bin/python3
 
 # altitude is sum of geoidal seperation and ellipsoid altitude (ie. GPGGA provides an estimate of MSL as well as the undulation)
 # https://gis.stackexchange.com/questions/174046/relation-between-geoidal-separation-and-antenna-altitude-in-gga-sentence
@@ -89,9 +89,9 @@ def main():
         global geoidheight
 
         geoidheight = geoidheight.geoid.GeoidHeight()
-        last_seen_rmc = datetime.time(0,0,0,1)
-        last_seen_gga = datetime.time(0,0,0,2)
-        last_seen_pclmp = datetime.time(0,0,0,3)
+        last_seen_rmc = None
+        last_seen_gga = None
+        last_seen_pclmp = None
         current = missing_values  # we fill these in as we receive sentences
 
         FORMAT = '%(asctime)s %(levelname)s: %(message)s'
@@ -121,6 +121,7 @@ def main():
                 except pynmea2.nmea.ParseError as e:
                     logging.debug("pynmea2.nmea.ParseError: {}".format(e))
                     #logging.debug(x.decode('ISO-8859-1').strip())
+                    continue  # gps string malformed, skip and read the next one
 
                 if((msg.talker=='GN' and msg.sentence_type=='RMC') and msg.status=='A'):
                    #print(x.decode('ISO-8859-1').strip())
@@ -212,7 +213,7 @@ def main():
             else:
                time.sleep(0.1)  # on serial data available
 
-            if ((last_seen_gga == last_seen_rmc)):   # and (last_seen_gga == last_seen_pclmp)):
+            if ((last_seen_gga == last_seen_rmc) and last_seen_gga is not None):   # and (last_seen_gga == last_seen_pclmp)):
                #print("Got a complete set!  let's submit a MQTT message.")
                current['time']=round(time.time(),2)  # unix epoch time to 2 places  
                if(current['lat'] is not None and current['lon'] is not None):
@@ -248,9 +249,9 @@ def main():
                    logging.warning("MQTT pub: failure {}".format(mqttString))
 
                # reset last seen messages, prepare for new pair
-               last_seen_rmc = datetime.time(0,0,0,1)
-               last_seen_gga = datetime.time(0,0,0,2)
-               last_seen_pclmp = datetime.time(0,0,0,3)
+               last_seen_rmc = None
+               last_seen_gga = None
+               last_seen_pclmp = None
                current = missing_values
 
 
