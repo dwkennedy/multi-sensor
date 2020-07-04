@@ -19,6 +19,7 @@ import geomag
 import geoidheight.geoid
 import numpy as np
 import paho.mqtt.client as mqtt
+import ssl
 from secret import *
 
 LOCAL_BROKER_ADDRESS = '127.0.0.1'  # MQTT broker address
@@ -102,7 +103,9 @@ def main():
         client = mqtt.Client('gps-{}-cmd'.format(WXT_SERIAL))
         client.on_message = on_message
         client.username_pw_set(MQTT_USERNAME,MQTT_PASSWORD);
-        client.connect(LOCAL_BROKER_ADDRESS)
+        client.tls_set(ca_certs='/etc/mosquitto/certs/lma.crt',cert_reqs=ssl.CERT_NONE)
+
+        client.connect(LOCAL_BROKER_ADDRESS, port=LOCAL_BROKER_PORT)
         client.loop_start()
         client.subscribe('gps/{}/cmd'.format(WXT_SERIAL))  # subscribe to command channel
 
